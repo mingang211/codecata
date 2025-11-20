@@ -20,47 +20,36 @@ public class Quest91 {
 
 class Solution91 {
     public int[] solution(int[] progresses, int[] speeds) {
-        List<Integer> answerList = new ArrayList<>();
-        int days = 0; // 작업이 완료될 때까지 걸린 일수
-        int deployIndex = 0; // 다음에 배포해야 할 기능의 인덱스
+        // 완료 일수를 저장할 Queue를 LinkedList로 구현.
+        Queue<Integer> daysQueue = new LinkedList<>();
 
-        // 모든 기능이 배포될 때까지 반복
-        while (deployIndex < progresses.length) {
+        // 각 기능별 완료까지 걸리는 최소 일수를 계산하여 Queue에 추가
+        for (int i = 0; i < progresses.length; i++) {
+            int remainingProgress = 100 - progresses[i];
 
-            // 배포되어야 할 가장 앞 기능의 완료까지 걸리는 일수를 계산
-            // progresses[deployIndex] : 현재 진행도
-            // 100 - progresses[deployIndex] : 남은 진행도
-            // Math.ceil()을 사용하여 남은 일수를 정수 올림 처리
-            int remainingProgress = 100 - progresses[deployIndex];
-            // 남은 일수 계산
-            int requiredDays = (int) Math.ceil((double) remainingProgress / speeds[deployIndex]);
-
-            // 이미 지난 작업 일수보다 새로 계산된 일수가 더 길다면, 작업 일수를 업데이트
-            if (requiredDays > days) {
-                days = requiredDays;
-            }
-
-            // 당일 배포 가능한 기능 카운트하는 변수 선언
-            int deployCount = 0;
-
-            // 현재 배포 대기 중인 기능부터 시작하여 순차적으로 확인
-            for (int i = deployIndex; i < progresses.length; i++) {
-                // 현재 기능이 '가장 앞 기능의 완료일'(days)까지 완료되었는지 확인
-                if (progresses[i] + speeds[i] * days >= 100) {
-                    deployCount++;
-                } else {
-                    // 앞의 기능이 완료되었더라도, 현재 기능이 완료되지 않았다면 그 뒤의 기능들은 배포될 수 없음
-                    break;
-                }
-            }
-
-            if (deployCount > 0) {
-                answerList.add(deployCount);
-                // 배포된 개수만큼 다음 배포 시작 인덱스를 이동.
-                deployIndex += deployCount;
-            }
+            // Math.ceil을 사용하여 남은 일수를 올림 처리
+            int requiredDays = (int) Math.ceil((double) remainingProgress / speeds[i]);
+            daysQueue.offer(requiredDays);
         }
 
+        List<Integer> answerList = new ArrayList<>();
+
+        // Queue가 비어있을 때까지 반복
+        while (!daysQueue.isEmpty()) {
+            int currentMaxDay = daysQueue.poll();
+            int deployCount = 1; // 첫 번째 기능은 무조건 배포 그룹에 포함되므로 1부터 시작
+
+            // Queue의 다음 요소들을 확인하며 currentMaxDay보다 일찍 완료되었거나 같은 날 완료된 기능들을 그룹에 포함
+            while (!daysQueue.isEmpty() && daysQueue.peek() <= currentMaxDay) {
+                daysQueue.poll(); // Queue에서 제거 (그룹에 포함 완료)
+                deployCount++;    // 배포 개수 증가
+            }
+
+            // 한 번에 배포된 기능의 개수를 결과 리스트에 추가
+            answerList.add(deployCount);
+        }
+
+        // List를 int 배열로 변환하여 반환
         return answerList.stream().mapToInt(i -> i).toArray();
     }
 }
